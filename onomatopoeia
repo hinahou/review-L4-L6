@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狀聲詞與狀態詞大挑戰</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans TC for traditional Chinese -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#F0F9FF', // Light Blue Background
+                            primary: '#0EA5E9', // Sky Blue
+                            secondary: '#10B981', // Emerald Green
+                            accent: '#F59E0B', // Amber
+                            danger: '#EF4444', // Red
+                            dark: '#1E293B', // Slate
+                        }
+                    },
+                    animation: {
+                        'bounce-slight': 'bounce-slight 2s infinite',
+                        'pop': 'pop 0.3s ease-out',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'bounce-slight': {
+                            '0%, 100%': { transform: 'translateY(-5%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        },
+                        'pop': {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        'shake': {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #eef2f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Prevent scrolling for the game feel */
+        }
+        
+        /* 16:9 Aspect Ratio Container */
+        .game-container {
+            width: 100%;
+            max-width: 1280px;
+            aspect-ratio: 16/9;
+            background-color: white;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom Scrollbar for explanation text */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .option-btn {
+            transition: all 0.2s;
+            border-bottom-width: 4px;
+        }
+        .option-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-top: 4px;
+        }
+        
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container bg-brand-bg relative" id="app">
+        
+        <!-- Decorative Background Blobs -->
+        <div class="blob bg-blue-200 w-64 h-64 top-[-50px] left-[-50px] animate-float"></div>
+        <div class="blob bg-yellow-200 w-80 h-80 bottom-[-50px] right-[-50px] animate-float" style="animation-delay: 1s;"></div>
+        <div class="blob bg-green-200 w-48 h-48 bottom-[20%] left-[20%] animate-float" style="animation-delay: 2s;"></div>
+
+        <!-- ==================== SCENE 1: START SCREEN ==================== -->
+        <div id="start-screen" class="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-8">
+            <div class="mb-6 text-6xl animate-bounce-slight">🎵</div>
+            <h1 class="text-5xl md:text-6xl font-black text-brand-dark mb-4 tracking-tight drop-shadow-sm">
+                狀聲詞與狀態詞<br><span class="text-brand-primary">大挑戰</span>
+            </h1>
+            <p class="text-xl text-gray-500 mb-10 font-medium">國中國文科單元練習 • 隨機 5 題</p>
+            
+            <button onclick="game.start()" class="group relative px-10 py-5 bg-brand-primary hover:bg-sky-400 text-white text-2xl font-bold rounded-2xl shadow-[0_6px_0_0_#0284c7] transition-all active:shadow-none active:translate-y-[6px]">
+                <span class="mr-2">🚀</span> 開始挑戰
+                <div class="absolute -top-3 -right-3 bg-brand-accent text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse transform rotate-12 shadow-md">
+                    Ready?
+                </div>
+            </button>
+
+            <!-- Decorative Icons -->
+            <div class="absolute top-20 left-20 text-4xl text-brand-secondary opacity-50 animate-bounce-slight" style="animation-delay: 0.5s;"><i class="fa-solid fa-wind"></i></div>
+            <div class="absolute bottom-20 left-40 text-4xl text-brand-accent opacity-50 animate-bounce-slight" style="animation-delay: 1.5s;"><i class="fa-solid fa-music"></i></div>
+            <div class="absolute top-32 right-32 text-4xl text-brand-danger opacity-50 animate-bounce-slight" style="animation-delay: 1s;"><i class="fa-solid fa-drum"></i></div>
+        </div>
+
+        <!-- ==================== SCENE 2: GAME SCREEN ==================== -->
+        <div id="game-screen" class="hidden absolute inset-0 z-10 flex flex-col p-6 md:p-10">
+            
+            <!-- Header: Progress & Score -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center text-2xl">
+                        🦉
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Progress</div>
+                        <div class="text-xl font-black text-brand-dark">第 <span id="current-q-num" class="text-brand-primary">1</span>/5 題</div>
+                    </div>
+                </div>
+                
+                <div class="bg-white px-6 py-2 rounded-full shadow-sm border-2 border-brand-bg flex items-center gap-2">
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                    <span class="font-bold text-gray-600">得分: <span id="score-display">0</span></span>
+                </div>
+            </div>
+
+            <!-- Main Question Area -->
+            <div class="flex-1 flex gap-6 h-full">
+                
+                <!-- Left: Question Card -->
+                <div class="w-1/2 bg-white rounded-3xl shadow-lg p-8 flex flex-col justify-center relative border-b-8 border-gray-100 animate-pop">
+                    <div class="absolute top-6 left-6 bg-brand-bg text-brand-primary px-3 py-1 rounded-lg text-sm font-bold">
+                        <i class="fa-regular fa-circle-question mr-1"></i> 題目
+                    </div>
+                    <h2 id="question-text" class="text-3xl font-bold text-gray-800 leading-relaxed">
+                        題目載入中...
+                    </h2>
+                    <div class="mt-8 flex gap-2">
+                        <!-- Decorative tags based on context (Dynamic later) -->
+                        <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-md text-xs font-bold">#國文</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-md text-xs font-bold">#詞語運用</span>
+                    </div>
+                </div>
+
+                <!-- Right: Options Grid -->
+                <div class="w-1/2 grid grid-cols-1 gap-4" id="options-container">
+                    <!-- Options injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== OVERLAY: FEEDBACK ==================== -->
+        <div id="feedback-overlay" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-white w-[90%] max-w-2xl rounded-3xl p-8 shadow-2xl transform transition-all scale-100 border-4 border-white relative overflow-hidden">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div id="feedback-icon" class="text-6xl mb-2 animate-bounce">🎉</div>
+                    <h3 id="feedback-title" class="text-3xl font-black text-brand-dark">答對了！</h3>
+                </div>
+                
+                <!-- Explanation Box -->
+                <div class="bg-brand-bg rounded-xl p-6 mb-8 border-l-4 border-brand-primary">
+                    <p class="text-xs font-bold text-brand-primary uppercase mb-2">解析說明</p>
+                    <p id="feedback-text" class="text-lg text-gray-700 font-medium leading-relaxed">
+                        這裡會顯示解析文字...
+                    </p>
+                </div>
+
+                <!-- Next Button -->
+                <button onclick="game.nextQuestion()" class="w-full py-4 bg-brand-dark text-white text-xl font-bold rounded-xl shadow-lg hover:bg-gray-800 transition-colors">
+                    下一題 <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== SCENE 3: RESULT SCREEN ==================== -->
+        <div id="result-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 backdrop-blur-md">
+            <div class="text-center max-w-lg w-full p-8 rounded-3xl bg-white shadow-2xl border-2 border-gray-100 animate-pop">
+                <div class="w-24 h-24 mx-auto bg-yellow-100 rounded-full flex items-center justify-center text-5xl mb-6 shadow-inner">
+                    🏆
+                </div>
+                <h2 class="text-4xl font-black text-gray-800 mb-2">挑戰完成！</h2>
+                <p class="text-gray-500 mb-8">來看看你的學習成果吧</p>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-blue-50 p-4 rounded-2xl text-center">
+                        <div class="text-sm text-blue-400 font-bold mb-1">總分</div>
+                        <div class="text-4xl font-black text-brand-primary" id="final-score">100</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-2xl text-center">
+                        <div class="text-sm text-green-500 font-bold mb-1">答對題數</div>
+                        <div class="text-4xl font-black text-brand-secondary"><span id="correct-count">5</span>/5</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl mb-8 text-gray-600 font-medium text-lg" id="final-message">
+                    太厲害了！你根本是狀聲詞大師！
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="location.reload()" class="flex-1 py-3 bg-brand-primary text-white font-bold rounded-xl hover:bg-sky-400 shadow-md transition-colors">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> 再玩一次
+                    </button>
+                    <!-- Future feature: Review wrong answers -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        // Data Source: 30 Questions
+        const questionBank = [
+            { id: 1, q: "根據講義，下列對於「狀聲詞」的定義何者正確？", options: ["用來形容事物狀態或樣子的詞語", "用來模仿事物或動作聲音的詞語", "專指自然界風雨雷電的聲音", "必須是疊字才能稱為狀聲詞"], ans: 1, exp: "狀聲詞是模仿事物或動作聲音的詞語；(A)是狀態詞的定義。" },
+            { id: 2, q: "下列哪一個詞語描寫的是「水聲」？", options: ["泠泠", "颯颯", "嚶嚶", "琅琅"], ans: 0, exp: "泠泠為水聲；颯颯是風聲；嚶嚶是鳥聲；琅琅是讀書聲。" },
+            { id: 3, q: "詩句「無邊落木蕭蕭下」中的「蕭蕭」形容的是什麼聲音？", options: ["馬鳴聲", "風聲", "落葉聲", "雨聲"], ans: 2, exp: "蕭蕭在此詩句中形容「落木」（落葉）下的聲音。" },
+            { id: 4, q: "成語「磨刀霍霍」中的「霍霍」是指什麼聲音？", options: ["揮舞刀劍的聲音", "磨刀聲", "切肉的聲音", "刀光閃亮的樣子"], ans: 1, exp: "霍霍是磨刀聲。" },
+            { id: 5, q: "下列哪一組狀聲詞皆是用來形容「鳥鳴聲」？", options: ["關關、啞啞、啁啾", "嘖嘖、咕咕、嚶嚶", "間關、吱吱喳喳、嗡嗡", "啾啾、呱呱、嘒嘒"], ans: 0, exp: "關關、啞啞、啁啾皆為鳥鳴；(B)嘖嘖是人聲；(C)嗡嗡是蟲/飛機聲；(D)嘒嘒是蟬鳴。" },
+            { id: 6, q: "「唧唧復唧唧，木蘭當戶織」中的「唧唧」是指什麼聲音？", options: ["蟲鳴聲", "嘆息聲", "織布機的機柱聲", "腳步聲"], ans: 2, exp: "「木蘭當戶織」語境下，唧唧為織布機聲。" },
+            { id: 7, q: "關於「呱呱」的讀音與意義說明，何者正確？", options: ["讀作「ㄍㄨ ㄍㄨ」時，指鳥獸鳴叫聲", "讀作「ㄍㄨㄚ ㄍㄨㄚ」時，指嬰孩啼哭聲", "讀作「ㄍㄨ ㄍㄨ」時，指嬰孩啼哭聲", "兩者讀音通用，意義無差別"], ans: 2, exp: "讀作「ㄍㄨ ㄍㄨ」指嬰孩啼哭；讀作「ㄍㄨㄚ ㄍㄨㄚ」指鳥獸鳴叫。" },
+            { id: 8, q: "下列哪一個詞語屬於「狀態詞」而非狀聲詞？", options: ["流水「淙淙」", "飢腸「轆轆」", "炊煙「裊裊」", "雷聲「隆隆」"], ans: 2, exp: "裊裊形容煙霧繚繞的「樣子」，聽不到聲音。" },
+            { id: 9, q: "詩句「伐木丁丁，鳥鳴嚶嚶」中的「丁丁」形容什麼聲音？", options: ["下棋聲", "伐木聲", "金屬撞擊聲", "雨打屋簷聲"], ans: 1, exp: "「伐木丁丁」指砍伐樹木的聲音。" },
+            { id: 10, q: "下列哪一個狀聲詞是用來形容「笑聲」？", options: ["嘖嘖", "咯咯", "喃喃", "嗷嗷"], ans: 1, exp: "咯咯、噗哧、哈哈、嘎嘎皆為笑聲。" },
+            { id: 11, q: "「不聞爺孃換女聲，但聞燕山胡騎聲啾啾」中的「啾啾」是指？", options: ["鳥鳴聲", "蟲鳴聲", "鬼哭聲", "馬鳴聲"], ans: 3, exp: "「胡騎」指戰馬，故此處啾啾為馬鳴聲。" },
+            { id: 12, q: "下列哪一個詞語「不是」狀聲詞？", options: ["潺潺", "涓涓", "淅淅", "濺濺"], ans: 1, exp: "涓涓是細水漫流的「樣子」，為狀態詞。" },
+            { id: 13, q: "形容「幼兒學說話的聲音」應使用下列哪個狀聲詞？", options: ["喃喃", "琅琅", "牙牙", "哇哇"], ans: 2, exp: "牙牙學語，形容幼兒學說話聲。" },
+            { id: 14, q: "下列對於「轆轆」一詞的解釋，何者錯誤？", options: ["可形容車行聲", "可形容餓時腹部發出的聲音", "可形容水流聲", "是一種疊字狀聲詞"], ans: 2, exp: "轆轆可指車行聲或飢腸轆轆，不用於水流聲。" },
+            { id: 15, q: "「新鬼煩冤舊鬼哭，天陰雨溼聲啾啾」中的「啾啾」形容什麼？", options: ["各種尖細淒切的聲音（鬼哭聲）", "小鳥的叫聲", "馬匹的嘶鳴", "蟲鳴聲"], ans: 0, exp: "語境提到「新鬼、舊鬼」，故指鬼哭聲。" },
+            { id: 16, q: "下列哪一個選項中的「滔滔」用法解釋正確？", options: ["白浪滔滔：形容海浪拍打的巨大聲音", "滔滔不絕：形容說話連續不斷的樣子", "兩者皆是狀聲詞", "兩者皆形容風聲"], ans: 1, exp: "「白浪滔滔」是水流滾滾不絕的「樣子」，屬狀態詞；「滔滔不絕」亦形容說話的狀態。" },
+            { id: 17, q: "形容「機件轉動聲」或「織布機聲」的狀聲詞，除了唧唧外，還有哪一個？", options: ["札札", "必剝", "滴答", "鏗鏘"], ans: 0, exp: "古詩有云「札札弄機柱」，形容機件轉動聲。" },
+            { id: 18, q: "「嘖嘖稱奇」中的「嘖嘖」是指什麼動作發出的聲音？", options: ["拍手聲", "咂嘴聲", "頓足聲", "彈指聲"], ans: 1, exp: "嘖嘖是咂嘴聲，表示讚嘆驚奇。" },
+            { id: 19, q: "下列哪一個詞語用來形容「金屬或玉石撞擊的聲音」？", options: ["撲通", "窸窣", "鋃鐺", "呼呼"], ans: 2, exp: "鋃鐺是金屬或玉石撞擊聲，常指鐵鍊刑具。" },
+            { id: 20, q: "關於「侃侃而談」的「侃侃」，下列敘述何者正確？", options: ["是狀聲詞，形容說話很大聲", "是狀態詞，形容說話從容不迫的樣子", "是狀聲詞，形容辯論激烈的聲音", "是狀態詞，形容說話結結巴巴的樣子"], ans: 1, exp: "侃侃而談形容從容不迫的樣子，屬狀態詞。" },
+            { id: 21, q: "「蟬鳴嘒嘒」中的「嘒嘒」是用來形容哪種動物？", options: ["鳥", "蟬", "蟋蟀", "青蛙"], ans: 1, exp: "嘒嘒專指蟬鳴聲。" },
+            { id: 22, q: "下列哪一個詞語不適合用來形容「雨聲」？", options: ["淅淅瀝瀝", "瀟瀟淅淅", "嘩啦嘩啦", "嗷嗷待哺"], ans: 3, exp: "嗷嗷是哀號或哭聲，與雨聲無關。" },
+            { id: 23, q: "成語「信誓旦旦」中的「旦旦」是狀聲詞嗎？", options: ["是，形容發誓的聲音", "是，形容拍胸脯的聲音", "不是，形容誠懇的樣子", "不是，形容時間很早"], ans: 2, exp: "旦旦形容誠懇的樣子，非聲音。" },
+            { id: 24, q: "關於「嗡嗡」一詞，講義中主要提到它形容什麼聲音？", options: ["流水聲", "昆蟲飛動或飛機飛行聲", "大砲發射聲", "打雷聲"], ans: 1, exp: "嗡嗡指昆蟲飛動或飛機飛行聲。" },
+            { id: 25, q: "下列詞語配對，何者錯誤？", options: ["撲通：物體落地或落水聲", "沙沙：風吹樹葉聲", "劈啪：燃燒爆裂聲", "喃喃：清朗的讀書聲"], ans: 3, exp: "喃喃是低聲說話；清朗讀書聲應為琅琅。" },
+            { id: 26, q: "古文「宜圍棋，子聲丁丁然」中的「丁丁」是用來形容什麼聲音？", options: ["伐木聲", "下棋聲", "漏水聲", "彈琴聲"], ans: 1, exp: "「子聲丁丁然」指下棋聲。" },
+            { id: 27, q: "下列哪一個詞語屬於「狀態詞」，且形容「勤求不休止的樣子」？", options: ["汲汲營營", "沾沾自喜", "娓娓道來", "循循善誘"], ans: 0, exp: "汲汲營營形容勤求不休止的樣子。" },
+            { id: 28, q: "「必剝爆響」中的「必剝」通常是用來形容什麼聲音？", options: ["燃燒時爆裂或敲擊的聲音", "大雨落下的聲音", "衣服撕裂的聲音", "心跳加速的聲音"], ans: 0, exp: "必剝是敲擊或爆裂的聲音。" },
+            { id: 29, q: "若要形容「清朗的讀書聲」，最適合使用下列哪一個狀聲詞？", options: ["喃喃", "琅琅", "牙牙", "嚶嚶"], ans: 1, exp: "琅琅上口，形容清朗讀書聲。" },
+            { id: 30, q: "「秋風瑟瑟」中的「瑟瑟」是被歸類為哪一種聲音？", options: ["水聲", "雨聲", "風聲", "落葉聲"], ans: 2, exp: "颯颯、颼颼、瑟瑟皆歸類為風聲。" }
+        ];
+
+        // Game State
+        const game = {
+            questions: [],
+            currentIdx: 0,
+            score: 0,
+            totalQuestions: 5,
+            
+            // Initialize Game
+            start: function() {
+                // Shuffle and pick 5 questions
+                this.questions = [...questionBank].sort(() => 0.5 - Math.random()).slice(0, this.totalQuestions);
+                this.currentIdx = 0;
+                this.score = 0;
+                
+                // Update UI
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                document.getElementById('result-screen').classList.add('hidden');
+                
+                this.updateScore();
+                this.renderQuestion();
+            },
+
+            // Render current question
+            renderQuestion: function() {
+                const qData = this.questions[this.currentIdx];
+                
+                // Update Progress Text
+                document.getElementById('current-q-num').innerText = this.currentIdx + 1;
+                
+                // Animate Question Text
+                const qText = document.getElementById('question-text');
+                qText.style.opacity = '0';
+                setTimeout(() => {
+                    qText.innerText = qData.q;
+                    qText.style.opacity = '1';
+                    qText.classList.add('transition-opacity', 'duration-500');
+                }, 100);
+
+                // Render Options
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+
+                // Colors for buttons (Visual candy)
+                const btnColors = [
+                    'bg-red-50 hover:bg-red-100 border-red-200 text-red-700',
+                    'bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700',
+                    'bg-green-50 hover:bg-green-100 border-green-200 text-green-700',
+                    'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'
+                ];
+                
+                // Option Labels
+                const labels = ['A', 'B', 'C', 'D'];
+
+                qData.options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    // Style class
+                    btn.className = `option-btn w-full p-6 rounded-2xl border-2 shadow-sm text-left flex items-center gap-4 transition-transform ${btnColors[index]}`;
+                    
+                    btn.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                            ${labels[index]}
+                        </div>
+                        <span class="text-xl font-bold">${opt}</span>
+                    `;
+                    
+                    btn.onclick = () => this.checkAnswer(index);
+                    optionsContainer.appendChild(btn);
+                });
+            },
+
+            // Check Answer
+            checkAnswer: function(selectedIndex) {
+                const qData = this.questions[this.currentIdx];
+                const isCorrect = selectedIndex === qData.ans;
+                
+                // Update Logic
+                if(isCorrect) {
+                    this.score += 20; // 100 / 5 = 20
+                    this.updateScore();
+                    this.showFeedback(true, qData.exp);
+                } else {
+                    this.showFeedback(false, qData.exp);
+                }
+            },
+
+            // Show Feedback Overlay
+            showFeedback: function(isCorrect, explanation) {
+                const overlay = document.getElementById('feedback-overlay');
+                const title = document.getElementById('feedback-title');
+                const icon = document.getElementById('feedback-icon');
+                const text = document.getElementById('feedback-text');
+                const container = overlay.firstElementChild; // The white box
+
+                overlay.classList.remove('hidden');
+                
+                // Reset animation
+                container.classList.remove('animate-pop', 'animate-shake');
+                void container.offsetWidth; // trigger reflow
+
+                if(isCorrect) {
+                    title.innerText = "答對了！";
+                    title.className = "text-3xl font-black text-brand-secondary";
+                    icon.innerText = "🎉";
+                    container.classList.add('animate-pop');
+                    container.className = "bg-white w-[90%] max-w-2xl rounded-3xl p-8 shadow-2xl transform transition-all scale-100 border-4 border-brand-secondary relative overflow-hidden";
+                } else {
+                    title.innerText = "哎呀！答錯囉";
+                    title.className = "text-3xl font-black text-brand-danger";
+                    icon.innerText = "😅";
+                    container.classList.add('animate-shake');
+                    container.className = "bg-white w-[90%] max-w-2xl rounded-3xl p-8 shadow-2xl transform transition-all scale-100 border-4 border-brand-danger relative overflow-hidden";
+                }
+
+                text.innerHTML = explanation;
+            },
+
+            // Next Question or Result
+            nextQuestion: function() {
+                document.getElementById('feedback-overlay').classList.add('hidden');
+                
+                this.currentIdx++;
+                
+                if(this.currentIdx < this.totalQuestions) {
+                    this.renderQuestion();
+                } else {
+                    this.showResult();
+                }
+            },
+
+            // Update Score Display
+            updateScore: function() {
+                // Animate numbers (simple)
+                const display = document.getElementById('score-display');
+                display.innerText = this.score;
+            },
+
+            // Show Final Result
+            showResult: function() {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                
+                document.getElementById('final-score').innerText = this.score;
+                document.getElementById('correct-count').innerText = this.score / 20;
+
+                const msg = document.getElementById('final-message');
+                if(this.score === 100) {
+                    msg.innerHTML = "🏆 太神啦！全部答對，你是<span class='text-brand-primary font-bold'>狀聲詞大師</span>！";
+                    this.triggerConfetti();
+                } else if(this.score >= 80) {
+                    msg.innerText = "✨ 非常棒！已經掌握得很好了，繼續保持！";
+                } else if(this.score >= 60) {
+                    msg.innerText = "👍 及格囉！有些觀念可以再複習一下講義會更強！";
+                } else {
+                    msg.innerText = "💪 別灰心！多玩幾次，熟悉之後你一定會進步的！";
+                }
+            },
+
+            // Simple Confetti Effect (CSS based logic via JS injection)
+            triggerConfetti: function() {
+                const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6'];
+                for(let i=0; i<50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-10px';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = '50%';
+                    confetti.style.zIndex = '100';
+                    confetti.style.animation = `float ${Math.random() * 2 + 3}s linear forwards`;
+                    document.body.appendChild(confetti);
+                    
+                    // Remove after animation
+                    setTimeout(() => confetti.remove(), 5000);
+                }
+            }
+        };
+
+        // Add CSS for Confetti dynamically if needed, or rely on tailwind classes above
+    </script>
+</body>
+</html>
